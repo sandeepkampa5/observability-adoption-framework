@@ -1,0 +1,146 @@
+{
+  "$schema": "https://raw.githubusercontent.com/observability-adoption-framework/schemas/v1/dashboard.schema.json",
+  "metadata": {
+    "name": "RUM - Core Web Vitals & User Experience",
+    "description": "Real User Monitoring dashboard tracking Core Web Vitals, page load performance, and user journey health. Based on the adoption framework that achieved 50% faster page loads and 60% improvement in Core Web Vitals.",
+    "version": "1.0.0",
+    "framework_phase": "Phase 3 - User Experience",
+    "author": "Sandeep Kampa",
+    "attribution": "Architecture patterns from 'Adoption of RUM and APM at Splunk' (March 2024)",
+    "tags": ["rum", "web-vitals", "user-experience", "frontend"],
+    "compatible_backends": ["splunk", "datadog", "grafana", "newrelic", "elastic"]
+  },
+  "variables": [
+    {
+      "name": "environment",
+      "label": "Environment",
+      "type": "custom",
+      "values": ["production", "staging", "development"]
+    },
+    {
+      "name": "service",
+      "label": "Service",
+      "type": "query",
+      "datasource": "metrics",
+      "query": "label_values(browser_page_load_duration_seconds, service_name)"
+    }
+  ],
+  "rows": [
+    {
+      "title": "Core Web Vitals Overview",
+      "height": 3,
+      "panels": [
+        {
+          "title": "LCP (Largest Contentful Paint)",
+          "type": "stat",
+          "description": "Target: < 2.5s (Good), < 4.0s (Needs Improvement)",
+          "metric": {
+            "name": "browser.page.largest_contentful_paint",
+            "aggregation": "p75",
+            "unit": "milliseconds"
+          },
+          "thresholds": { "good": 2500, "warning": 4000, "critical": 6000 }
+        },
+        {
+          "title": "FID (First Input Delay)",
+          "type": "stat",
+          "metric": {
+            "name": "browser.page.first_input_delay",
+            "aggregation": "p75",
+            "unit": "milliseconds"
+          },
+          "thresholds": { "good": 100, "warning": 300, "critical": 500 }
+        },
+        {
+          "title": "CLS (Cumulative Layout Shift)",
+          "type": "stat",
+          "metric": {
+            "name": "browser.page.cumulative_layout_shift",
+            "aggregation": "p75",
+            "unit": "score"
+          },
+          "thresholds": { "good": 0.1, "warning": 0.25, "critical": 0.5 }
+        },
+        {
+          "title": "INP (Interaction to Next Paint)",
+          "type": "stat",
+          "metric": {
+            "name": "browser.page.interaction_to_next_paint",
+            "aggregation": "p75",
+            "unit": "milliseconds"
+          },
+          "thresholds": { "good": 200, "warning": 500, "critical": 800 }
+        }
+      ]
+    },
+    {
+      "title": "Page Load Performance",
+      "height": 5,
+      "panels": [
+        {
+          "title": "Page Load Time Distribution",
+          "type": "histogram",
+          "metric": {
+            "name": "browser.page.load_time",
+            "aggregation": "histogram",
+            "unit": "milliseconds"
+          }
+        },
+        {
+          "title": "Page Load Over Time (p50, p90, p99)",
+          "type": "timeseries",
+          "metric": {
+            "name": "browser.page.load_time",
+            "aggregation": ["p50", "p90", "p99"],
+            "unit": "milliseconds"
+          }
+        }
+      ]
+    },
+    {
+      "title": "Error Tracking & User Sessions",
+      "height": 4,
+      "panels": [
+        {
+          "title": "JavaScript Error Rate",
+          "type": "timeseries",
+          "metric": {
+            "name": "browser.errors",
+            "aggregation": "rate",
+            "unit": "errors/min"
+          }
+        },
+        {
+          "title": "Active Sessions",
+          "type": "stat",
+          "metric": {
+            "name": "browser.sessions.active",
+            "aggregation": "sum",
+            "unit": "sessions"
+          }
+        },
+        {
+          "title": "Geographic Distribution",
+          "type": "geomap",
+          "metric": {
+            "name": "browser.page.load_time",
+            "aggregation": "p75",
+            "group_by": ["client.geo.country"]
+          }
+        }
+      ]
+    }
+  ],
+  "alerts": [
+    {
+      "name": "LCP Degradation",
+      "condition": "browser.page.largest_contentful_paint.p75 > 4000 for 5m",
+      "severity": "critical"
+    },
+    {
+      "name": "High JS Error Rate",
+      "condition": "rate(browser.errors) > 100 for 2m",
+      "severity": "warning"
+    }
+  ]
+}

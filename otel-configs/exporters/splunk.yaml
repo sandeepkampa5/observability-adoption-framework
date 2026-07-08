@@ -1,0 +1,66 @@
+# =============================================================================
+# Exporter: Splunk Observability Cloud
+#
+# Sends traces, metrics, and logs to Splunk Observability Cloud.
+# Reference: "Adoption of RUM and APM at Splunk" tech talk architecture
+#
+# Required Environment Variables:
+#   SPLUNK_ACCESS_TOKEN  - Splunk Observability access token
+#   SPLUNK_REALM         - Splunk realm (us0, us1, eu0, etc.)
+#   SPLUNK_HEC_TOKEN     - Splunk HEC token for logs (optional)
+#   SPLUNK_HEC_ENDPOINT  - Splunk HEC endpoint for logs (optional)
+# =============================================================================
+
+exporters:
+  # --- Splunk APM (Traces) ---
+  sapm:
+    access_token: "${env:SPLUNK_ACCESS_TOKEN}"
+    endpoint: "https://ingest.${env:SPLUNK_REALM}.signalfx.com/v2/trace"
+    max_connections: 100
+    num_workers: 8
+    log_detailed_response: true
+
+  # --- Splunk Infrastructure Monitoring (Metrics) ---
+  signalfx:
+    access_token: "${env:SPLUNK_ACCESS_TOKEN}"
+    realm: "${env:SPLUNK_REALM}"
+    correlation:
+      endpoint: "https://api.${env:SPLUNK_REALM}.signalfx.com"
+    translation_rules:
+      - action: rename_dimension_keys
+        mapping:
+          host.name: host
+          k8s.pod.name: kubernetes_pod_name
+          k8s.namespace.name: kubernetes_namespace
+          k8s.node.name: kubernetes_node
+          k8s.deployment.name: kubernetes_workload_name
+
+  # --- Splunk Cloud / Enterprise (Logs via HEC) ---
+  splunk_hec:
+    token: "${env:SPLUNK_HEC_TOKEN}"
+    endpoint: "${env:SPLUNK_HEC_ENDPOINT}"
+    source: "otel-collector"
+    sourcetype: "_json"
+    index: "observability"
+    max_connections: 20
+    disable_compression: false
+    timeout: 10s
+    tls:
+      insecure_skip_verify: false
+    retry_on_failure:
+      enabled: true
+      initial_interval: 5s
+      max_interval: 30s
+
+# =============================================================================
+# Pipeline Wiring for Splunk
+# Replace the exporters in gateway-base.yaml with these:
+# =============================================================================
+# service:
+#   pipelines:
+#     traces:
+#       exporters: [sapm]
+#     metrics:
+#       exporters: [signalfx]
+#     logs:
+#       exporters: [splunk_hec]

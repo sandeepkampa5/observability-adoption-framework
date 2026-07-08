@@ -1,0 +1,53 @@
+{
+  "$schema": "https://raw.githubusercontent.com/observability-adoption-framework/schemas/v1/dashboard.schema.json",
+  "metadata": {
+    "name": "Service Health - Unified Cross-Signal Overview",
+    "description": "Unified service health view correlating RUM, APM, and Infrastructure signals into a single pane. This is the Phase 4 operational excellence dashboard that enables 10x faster incident resolution.",
+    "version": "1.0.0",
+    "framework_phase": "Phase 4 - Operational Excellence",
+    "author": "Sandeep Kampa",
+    "attribution": "Full-stack correlation pattern from .conf2023 Splunk-on-Splunk architecture (170+ customers)",
+    "tags": ["service-health", "correlation", "unified", "incident-response"],
+    "compatible_backends": ["splunk", "datadog", "grafana", "newrelic", "elastic"]
+  },
+  "variables": [
+    { "name": "environment", "label": "Environment", "type": "custom", "values": ["production", "staging"] },
+    { "name": "service", "label": "Service", "type": "query", "query": "label_values(http_server_duration, service_name)" }
+  ],
+  "rows": [
+    {
+      "title": "Service Status (Golden Signals)",
+      "height": 3,
+      "panels": [
+        { "title": "Overall Health Score", "type": "gauge", "metric": { "name": "composite_health_score", "calculation": "weighted_avg(apdex * 0.4, 1 - error_rate * 0.3, infra_health * 0.3)", "unit": "score" }, "thresholds": { "good": 0.9, "warning": 0.7, "critical": 0.5 } },
+        { "title": "User-Facing Errors", "type": "stat", "metric": { "name": "browser.errors", "aggregation": "rate", "unit": "errors/min" } },
+        { "title": "Backend Error Rate", "type": "stat", "metric": { "name": "http.server.request.count", "aggregation": "error_rate", "unit": "percent" } },
+        { "title": "Infra Saturation", "type": "stat", "metric": { "name": "system.cpu.utilization", "aggregation": "max", "unit": "percent" } }
+      ]
+    },
+    {
+      "title": "Cross-Signal Correlation Timeline",
+      "height": 6,
+      "description": "Correlate user impact (RUM) → application behavior (APM) → infrastructure state",
+      "panels": [
+        { "title": "User Experience (LCP)", "type": "timeseries", "metric": { "name": "browser.page.largest_contentful_paint", "aggregation": "p75", "unit": "ms" } },
+        { "title": "Backend Latency (p99)", "type": "timeseries", "metric": { "name": "http.server.duration", "aggregation": "p99", "unit": "ms" } },
+        { "title": "Infrastructure CPU", "type": "timeseries", "metric": { "name": "system.cpu.utilization", "aggregation": "avg", "unit": "percent" } },
+        { "title": "Infrastructure Memory", "type": "timeseries", "metric": { "name": "system.memory.utilization", "aggregation": "avg", "unit": "percent" } }
+      ]
+    },
+    {
+      "title": "Incident Correlation",
+      "height": 4,
+      "panels": [
+        { "title": "Recent Alerts", "type": "alert_list", "datasource": "alerts", "filters": { "service.name": "${service}", "severity": ["critical", "warning"] }, "limit": 10 },
+        { "title": "Deployment Markers", "type": "annotations", "datasource": "events", "query": { "type": "deployment", "service": "${service}" } }
+      ]
+    }
+  ],
+  "alerts": [
+    { "name": "Service Degraded", "condition": "composite_health_score < 0.7 for 3m", "severity": "warning" },
+    { "name": "Service Down", "condition": "composite_health_score < 0.5 for 1m", "severity": "critical" },
+    { "name": "Cascade Detection", "condition": "error_rate > 5% AND upstream_error_rate > 5% for 2m", "severity": "critical", "description": "Cascading failure detected across service dependencies" }
+  ]
+}

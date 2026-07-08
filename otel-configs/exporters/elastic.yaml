@@ -1,0 +1,30 @@
+# =============================================================================
+# Exporter: Elastic APM (Elasticsearch + Kibana)
+#
+# Sends all telemetry to Elastic Observability via OTLP.
+#
+# Required Environment Variables:
+#   ELASTIC_APM_ENDPOINT     - Elastic APM server endpoint
+#   ELASTIC_APM_SECRET_TOKEN - Elastic APM secret token
+# =============================================================================
+
+exporters:
+  otlp/elastic:
+    endpoint: "${env:ELASTIC_APM_ENDPOINT}"
+    headers:
+      "Authorization": "Bearer ${env:ELASTIC_APM_SECRET_TOKEN}"
+    tls:
+      insecure: false
+    compression: gzip
+
+# =============================================================================
+# Pipeline Wiring for Elastic
+# =============================================================================
+# service:
+#   pipelines:
+#     traces:
+#       exporters: [otlp/elastic]
+#     metrics:
+#       exporters: [otlp/elastic]
+#     logs:
+#       exporters: [otlp/elastic]
