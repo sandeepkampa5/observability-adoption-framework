@@ -1,0 +1,113 @@
+{
+  "$schema": "https://raw.githubusercontent.com/observability-adoption-framework/schemas/v1/dashboard.schema.json",
+  "metadata": {
+    "name": "APM - Service Health & Distributed Tracing",
+    "description": "Application Performance Monitoring dashboard providing service-level visibility into latency, error rates, and throughput with transaction-level end-to-end visibility.",
+    "version": "1.0.0",
+    "framework_phase": "Phase 2 - Application Visibility",
+    "author": "Sandeep Kampa",
+    "attribution": "Architecture from 'Adoption of RUM and APM at Splunk' (March 2024) and .conf2023 Splunk-on-Splunk demo",
+    "tags": ["apm", "traces", "services", "latency", "errors"],
+    "compatible_backends": ["splunk", "datadog", "grafana", "newrelic", "elastic", "jaeger"]
+  },
+  "variables": [
+    {
+      "name": "environment",
+      "label": "Environment",
+      "type": "custom",
+      "values": ["production", "staging", "development"]
+    },
+    {
+      "name": "service",
+      "label": "Service",
+      "type": "query",
+      "datasource": "traces",
+      "query": "label_values(traces_service_graph_request_total, client)"
+    }
+  ],
+  "rows": [
+    {
+      "title": "RED Metrics (Rate, Errors, Duration)",
+      "height": 3,
+      "panels": [
+        {
+          "title": "Request Rate",
+          "type": "stat",
+          "metric": { "name": "http.server.request.count", "aggregation": "rate", "unit": "req/s" }
+        },
+        {
+          "title": "Error Rate",
+          "type": "stat",
+          "metric": { "name": "http.server.request.count", "aggregation": "rate", "unit": "percent", "filters": { "http.status_code": "5xx" } },
+          "thresholds": { "good": 1, "warning": 5, "critical": 10 }
+        },
+        {
+          "title": "Latency (p99)",
+          "type": "stat",
+          "metric": { "name": "http.server.duration", "aggregation": "p99", "unit": "milliseconds" },
+          "thresholds": { "good": 500, "warning": 2000, "critical": 5000 }
+        },
+        {
+          "title": "Apdex Score",
+          "type": "gauge",
+          "metric": { "name": "http.server.duration", "aggregation": "apdex", "unit": "score", "parameters": { "satisfied_ms": 500, "tolerating_ms": 2000 } },
+          "thresholds": { "good": 0.9, "warning": 0.75, "critical": 0.5 }
+        }
+      ]
+    },
+    {
+      "title": "Latency & Throughput",
+      "height": 5,
+      "panels": [
+        {
+          "title": "Request Latency Over Time",
+          "type": "timeseries",
+          "metric": { "name": "http.server.duration", "aggregation": ["p50", "p90", "p95", "p99"], "unit": "milliseconds" }
+        },
+        {
+          "title": "Latency Heatmap",
+          "type": "heatmap",
+          "metric": { "name": "http.server.duration", "aggregation": "histogram", "unit": "milliseconds" }
+        }
+      ]
+    },
+    {
+      "title": "Service Dependencies",
+      "height": 6,
+      "panels": [
+        {
+          "title": "Service Map",
+          "type": "service_map",
+          "description": "End-to-end transaction visibility: user → frontend → backend → database",
+          "metric": { "name": "traces_service_graph_request_total", "group_by": ["client", "server"] }
+        },
+        {
+          "title": "Downstream Dependencies",
+          "type": "table",
+          "metric": { "name": "http.client.duration", "group_by": ["peer.service"], "aggregation": ["count", "p50", "p99", "error_rate"], "sort": "p99 desc", "limit": 20 }
+        }
+      ]
+    },
+    {
+      "title": "Endpoints & Slow Traces",
+      "height": 5,
+      "panels": [
+        {
+          "title": "Top Endpoints by Latency",
+          "type": "table",
+          "metric": { "name": "http.server.duration", "group_by": ["http.route", "http.method"], "aggregation": ["count", "p99"], "sort": "p99 desc", "limit": 15 }
+        },
+        {
+          "title": "Database Query Performance",
+          "type": "timeseries",
+          "metric": { "name": "db.client.operation.duration", "aggregation": ["p50", "p99"], "group_by": ["db.system", "db.operation"], "unit": "milliseconds" }
+        }
+      ]
+    }
+  ],
+  "alerts": [
+    { "name": "High Error Rate", "condition": "error_rate > 5% for 3m", "severity": "critical" },
+    { "name": "Latency Spike", "condition": "http.server.duration.p99 > 5000 for 2m", "severity": "warning" },
+    { "name": "Throughput Drop", "condition": "rate < previous_period * 0.5 for 5m", "severity": "warning" }
+  ]
+}

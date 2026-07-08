@@ -1,0 +1,75 @@
+# =============================================================================
+# Processor Configurations Reference
+#
+# Processors transform, filter, and enrich telemetry between receivers and
+# exporters. These are already assembled in pipelines/gateway-base.yaml.
+# This file documents individual processor options for customization.
+# =============================================================================
+
+# --- Batch Processor (Performance: reduces export calls) ---
+batch:
+  send_batch_size: 1024
+  send_batch_max_size: 2048
+  timeout: 5s
+
+# --- Memory Limiter (Backpressure: prevents OOM) ---
+memory_limiter:
+  check_interval: 5s
+  limit_mib: 1536
+  spike_limit_mib: 512
+
+# --- Resource Detection (Auto-detect infrastructure context) ---
+resourcedetection:
+  detectors: [env, system, docker, ec2, ecs, eks, gcp, azure]
+  timeout: 5s
+  override: false
+
+# --- Tail Sampling (Cost optimization: intelligent trace sampling) ---
+# Only applied to traces pipeline. Keeps all errors + slow traces,
+# samples a percentage of normal traces.
+tail_sampling:
+  decision_wait: 10s
+  num_traces: 100000
+  policies:
+    - name: always-keep-errors
+      type: status_code
+      status_code: { status_codes: [ERROR] }
+    - name: always-keep-slow
+      type: latency
+      latency: { threshold_ms: 2000 }
+    - name: sample-normal
+      type: probabilistic
+      probabilistic: { sampling_percentage: 10 }
+
+# --- Filter Processor (Noise reduction) ---
+# Drop metrics/spans that add noise without signal.
+filter/drop-noisy-metrics:
+  metrics:
+    exclude:
+      match_type: regexp
+      metric_names:
+        - "system\\.cpu\\.time"
+        - "process\\.runtime\\..*\\.gc\\..*"
+
+filter/drop-health-checks:
+  traces:
+    span:
+      exclude:
+        match_type: regexp
+        attributes:
+          - key: http.route
+            value: "/(healthz|readyz|livez)"
+
+# --- Transform Processor (Derive computed metrics) ---
+transform/add-slo-labels:
+  metric_statements:
+    - context: datapoint
+      statements:
+        - set(attributes["slo.tier"], "gold") where resource.attributes["service.name"] == "payment-service"
+        - set(attributes["slo.tier"], "silver") where resource.attributes["service.name"] != "payment-service"
+
+# --- Span Processor (Enrich trace spans) ---
+span:
+  name:
+    from_attributes: ["http.method", "http.route"]
+    separator: " "

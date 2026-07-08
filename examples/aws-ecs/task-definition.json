@@ -1,0 +1,55 @@
+# =============================================================================
+# Enterprise Observability Adoption Framework - AWS ECS Example
+#
+# Quick-start ECS task definition for running the OTel Collector on Fargate.
+# Use this as a reference alongside the Terraform modules for manual deploys.
+#
+# Usage:
+#   aws ecs register-task-definition --cli-input-json file://task-definition.json
+# =============================================================================
+{
+  "family": "otel-collector-gateway",
+  "requiresCompatibilities": ["FARGATE"],
+  "networkMode": "awsvpc",
+  "cpu": "1024",
+  "memory": "2048",
+  "executionRoleArn": "arn:aws:iam::ACCOUNT_ID:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::ACCOUNT_ID:role/otel-collector-task-role",
+  "containerDefinitions": [
+    {
+      "name": "otel-collector",
+      "image": "otel/opentelemetry-collector-contrib:0.100.0",
+      "essential": true,
+      "portMappings": [
+        { "containerPort": 4317, "protocol": "tcp" },
+        { "containerPort": 4318, "protocol": "tcp" },
+        { "containerPort": 13133, "protocol": "tcp" }
+      ],
+      "environment": [
+        { "name": "ENVIRONMENT", "value": "production" },
+        { "name": "ADOPTION_PHASE", "value": "4" }
+      ],
+      "secrets": [
+        {
+          "name": "OTEL_BACKEND_TOKEN",
+          "valueFrom": "arn:aws:secretsmanager:us-west-2:ACCOUNT_ID:secret:otel-backend-token"
+        }
+      ],
+      "healthCheck": {
+        "command": ["CMD-SHELL", "wget --spider -q http://localhost:13133/ || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 15
+      },
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/otel-collector",
+          "awslogs-region": "us-west-2",
+          "awslogs-stream-prefix": "collector"
+        }
+      }
+    }
+  ]
+}
