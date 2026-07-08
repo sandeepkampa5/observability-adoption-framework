@@ -12,7 +12,7 @@
 
 ## 📖 Origin & Attribution
 
-This framework is based on **original architectural patterns and adoption methodologies** developed and presented through official technical talks and conference presentations:
+This framework is based on **original architectural patterns and adoption methodologies** developed and presented by **Sandeep Kampa** through official technical talks and conference presentations:
 
 ### Foundational Technical Talks
 
