@@ -1,0 +1,35 @@
+# =============================================================================
+# Exporter: New Relic
+#
+# Sends all telemetry to New Relic via OTLP.
+#
+# Required Environment Variables:
+#   NEW_RELIC_API_KEY      - New Relic Ingest License Key
+#   NEW_RELIC_OTLP_ENDPOINT - OTLP endpoint (otlp.nr-data.net:4317 for US)
+# =============================================================================
+
+exporters:
+  otlp/newrelic:
+    endpoint: "${env:NEW_RELIC_OTLP_ENDPOINT}"
+    headers:
+      "api-key": "${env:NEW_RELIC_API_KEY}"
+    tls:
+      insecure: false
+    compression: gzip
+    retry_on_failure:
+      enabled: true
+      initial_interval: 5s
+      max_interval: 30s
+      max_elapsed_time: 300s
+
+# =============================================================================
+# Pipeline Wiring for New Relic
+# =============================================================================
+# service:
+#   pipelines:
+#     traces:
+#       exporters: [otlp/newrelic]
+#     metrics:
+#       exporters: [otlp/newrelic]
+#     logs:
+#       exporters: [otlp/newrelic]

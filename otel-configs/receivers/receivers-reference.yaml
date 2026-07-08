@@ -1,0 +1,58 @@
+# =============================================================================
+# Receiver Configurations Reference
+#
+# Receivers define HOW the collector ingests telemetry data.
+# These are already assembled in pipelines/gateway-base.yaml.
+# This file documents individual receiver options for customization.
+# =============================================================================
+
+# --- OTLP Receiver (Recommended for all new instrumentation) ---
+# Accepts traces, metrics, and logs in OTLP format via gRPC and HTTP.
+otlp:
+  protocols:
+    grpc:
+      endpoint: 0.0.0.0:4317
+      max_recv_msg_size_mib: 16
+      max_concurrent_streams: 100
+    http:
+      endpoint: 0.0.0.0:4318
+      cors:
+        allowed_origins: ["*"]
+        allowed_headers: ["*"]
+        max_age: 7200
+
+# --- Host Metrics Receiver (Phase 1: Infrastructure Foundation) ---
+hostmetrics:
+  collection_interval: 30s
+  scrapers:
+    cpu:
+      metrics:
+        system.cpu.utilization: { enabled: true }
+    memory:
+      metrics:
+        system.memory.utilization: { enabled: true }
+    disk: {}
+    filesystem: {}
+    load: {}
+    network: {}
+    processes: {}
+    process:
+      include:
+        match_type: regexp
+        names: ["java.*", "python.*", "node.*", "nginx.*"]
+
+# --- Kubernetes Cluster Receiver (K8s environments) ---
+k8s_cluster:
+  collection_interval: 30s
+  node_conditions_to_report: ["Ready", "MemoryPressure", "DiskPressure"]
+  allocatable_types_to_report: ["cpu", "memory", "storage"]
+
+# --- StatsD Receiver (Legacy metrics from apps using StatsD protocol) ---
+statsd:
+  endpoint: 0.0.0.0:8125
+  aggregation_interval: 60s
+  timer_histogram_mapping:
+    - statsd_type: "timer"
+      observer_type: "histogram"
+      histogram:
+        max_size: 100

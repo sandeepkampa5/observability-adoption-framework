@@ -1,0 +1,36 @@
+# =============================================================================
+# Exporter: Self-Hosted OSS (Jaeger + Prometheus + optional Loki)
+#
+# For teams running their own observability stack.
+#
+# Required Environment Variables:
+#   JAEGER_ENDPOINT              - Jaeger collector endpoint
+#   PROMETHEUS_REMOTE_WRITE_URL  - Prometheus remote write endpoint
+# =============================================================================
+
+exporters:
+  # --- Jaeger (Traces) ---
+  otlp/jaeger:
+    endpoint: "${env:JAEGER_ENDPOINT}"
+    tls:
+      insecure: true  # Set to false if using TLS
+
+  # --- Prometheus Remote Write (Metrics) ---
+  prometheusremotewrite/self-hosted:
+    endpoint: "${env:PROMETHEUS_REMOTE_WRITE_URL}"
+    tls:
+      insecure: true
+    resource_to_telemetry_conversion:
+      enabled: true
+
+# =============================================================================
+# Pipeline Wiring for Self-Hosted OSS
+# =============================================================================
+# service:
+#   pipelines:
+#     traces:
+#       exporters: [otlp/jaeger]
+#     metrics:
+#       exporters: [prometheusremotewrite/self-hosted]
+#     logs:
+#       exporters: [debug]  # No native OSS log backend in this config
