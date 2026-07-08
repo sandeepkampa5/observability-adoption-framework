@@ -1,13 +1,5 @@
-# =============================================================================
-# Enterprise Observability Adoption Framework - AWS ECS Example
-#
-# Quick-start ECS task definition for running the OTel Collector on Fargate.
-# Use this as a reference alongside the Terraform modules for manual deploys.
-#
-# Usage:
-#   aws ecs register-task-definition --cli-input-json file://task-definition.json
-# =============================================================================
 {
+  "_comment": "Enterprise Observability Adoption Framework - AWS ECS Example. Usage: aws ecs register-task-definition --cli-input-json file://task-definition.json",
   "family": "otel-collector-gateway",
   "requiresCompatibilities": ["FARGATE"],
   "networkMode": "awsvpc",
