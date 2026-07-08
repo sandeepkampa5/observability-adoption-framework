@@ -7,13 +7,13 @@
 
 module "networking" {
   source      = "../modules/networking"
-  environment = "demo"
+  environment = "dev"
   vpc_cidr    = "10.200.0.0/16"
 }
 
 module "backend" {
   source       = "../modules/observability-backend"
-  environment  = "demo"
+  environment  = "dev"
   backend_type = "grafana"  # Change to: splunk, datadog, newrelic, aws, elastic, oss
   api_token    = var.backend_api_token
 
@@ -24,7 +24,7 @@ module "backend" {
 
 module "otel_collector" {
   source      = "../modules/otel-collector"
-  environment = "demo"
+  environment = "dev"
   vpc_id      = module.networking.vpc_id
   subnet_ids  = module.networking.private_subnet_ids
 
