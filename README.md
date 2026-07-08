@@ -19,7 +19,7 @@ This framework is based on **original architectural patterns and adoption method
 | Talk | Date | Audience | Impact |
 |------|------|----------|--------|
 | **[Adoption of RUM and APM at Splunk](https://discover.splunk.com/Adoption-of-RUM-and-APM-at-Splunk.html)** | March 2024 | 600+ registrations, 183+ engaged participants | $17M pipeline, 82% knowledge improvement, 4.8/4.9★ |
-| **Adoption of Infrastructure Monitoring at Splunk** | July 2024 | Global Splunk community | [10,571+ community views](https://community.splunk.com/t5/tag/Infrastructure%20Monitoring/tg-p) |
+| **[Adoption of Infrastructure Monitoring at Splunk](https://discover.splunk.com/Adoption-of-Infrastructure-Monitoring-at-Splunk.html)** | July 2024 | Global Splunk community | [10,571+ community views](https://community.splunk.com/t5/tag/Infrastructure%20Monitoring/tg-p) |
 | **Splunk-on-Splunk Full Observability Demo** (.conf2023) | July 2023 | [170+ customers & partners](https://www.youtube.com/watch?v=P2UdO9Rb28U) | Featured in CEO & CMO weekly town halls; direct enterprise sales engagements |
 
 ### Community & Media Coverage
@@ -31,7 +31,7 @@ This framework is based on **original architectural patterns and adoption method
 
 ### Author
 
-**Sandeep Kampa** — Enterprise Observability Architect  
+**Sandeep Kampa** — Solutions Architect II at AWS  
 Original contributor of the adoption frameworks, architectural patterns, and implementation strategies codified in this repository. These patterns were field-tested across enterprise-scale production environments and validated through official technical education platforms with measurable business outcomes.
 
 ---
